@@ -9,6 +9,8 @@
 import os
 import sys
 import subprocess
+import shutil
+import stat
 
 from autopkglib import Processor, ProcessorError
 
@@ -58,8 +60,15 @@ class WinInstallerExtractor(Processor):
         extract_flag = 'x' if preserve_paths == 'True' else 'e'
         extract_path = "%s/%s" % (working_directory, extract_directory)
 
+        source_7z = os.path.join(os.path.dirname(os.path.abspath(__file__)), '7z')
+        dir_7z = os.path.join(working_directory, '7z')
+        file_7z = os.path.join(dir_7z, '7z')
+
+        shutil.copytree(source_7z, dir_7z)
+        os.chmod(file_7z, stat.S_IEXEC)
+
         self.output("Extracting: %s" % exe_path)
-        cmd = ['7z', extract_flag, '-y', '-o%s' % extract_path , exe_path]
+        cmd = [file_7z, extract_flag, '-y', '-o%s' % extract_path , exe_path]
 
         if ignore_pattern:
             cmd.append('-x!%s' % ignore_pattern)
@@ -74,6 +83,8 @@ class WinInstallerExtractor(Processor):
                 raise
 
         self.output("Extracted Archive Path: %s" % extract_path)
+
+        shutil.rmtree(dir_7z)
 
 if __name__ == '__main__':
     processor = WinInstallerExtractor()
